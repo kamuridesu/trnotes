@@ -1,17 +1,60 @@
 package config
 
 import (
-	"gopkg.in/yaml.v3"
+	"errors"
+	"fmt"
 	"os"
+	"path"
+
+	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
-	Url      string `yaml:"url"`
-	Username string `yaml:"username"`
-	Token    string `yaml:"token"`
+	Url        string `yaml:"url"`
+	Token      string `yaml:"token"`
+	configFile string
 }
 
-func New(filename string) (*Config, error) {
+func GetConfigPath() (string, error) {
+	home, err := os.UserConfigDir()
+	if err != nil {
+		return "", err
+	}
+	configPath := path.Join(home, "trnotes")
+	os.MkdirAll(configPath, os.ModePerm)
+	configFilePath := path.Join(configPath, "config.yaml")
+	return configFilePath, nil
+}
+
+func GetExistingConfig() (*Config, error) {
+	configFilePath, err := GetConfigPath()
+	if err != nil {
+		return nil, err
+	}
+	conf, err := Parse(configFilePath)
+	if err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			return nil, err
+		}
+		return nil, nil
+	}
+	conf.configFile = configFilePath
+	return conf, err
+
+}
+
+func New(url, token string) (*Config, error) {
+	c := Config{Url: url, Token: token}
+	configFile, err := GetConfigPath()
+	if err != nil {
+		return nil, err
+	}
+	c.configFile = configFile
+	return &c, err
+
+}
+
+func Parse(filename string) (*Config, error) {
 	file, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -21,5 +64,17 @@ func New(filename string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	conf.configFile = filename
 	return conf, nil
+}
+
+func (c *Config) Save() error {
+	if c.configFile == "" {
+		return fmt.Errorf("missing config path!")
+	}
+	content, err := yaml.Marshal(c)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(c.configFile, []byte(content), 0666)
 }

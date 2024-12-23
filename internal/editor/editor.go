@@ -5,10 +5,15 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 )
 
 func SaveFile(filename, content string) error {
 	return os.WriteFile(filename, []byte(content), os.ModeAppend)
+}
+
+func ConvertToHtml(text string) string {
+	return strings.ReplaceAll(text, "\n", "</br>")
 }
 
 func ReadFile(filename string) (*string, error) {
@@ -16,7 +21,7 @@ func ReadFile(filename string) (*string, error) {
 	if err != nil {
 		return nil, err
 	}
-	str := string(data)
+	str := ConvertToHtml(string(data))
 	return &str, nil
 }
 

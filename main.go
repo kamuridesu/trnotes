@@ -57,6 +57,9 @@ func main() {
 	trilium, err := t.FromConfig(config)
 	ppanic(err)
 	tempFile, err := e.OpenEditor()
+	if *tempFile == "" {
+		return
+	}
 	ppanic(err)
 	err = trilium.SaveNote(tempFile)
 	ppanic(err)

@@ -51,7 +51,11 @@ func (t *Trilium) SetToken(token string) {
 
 func (t *Trilium) Authorize(password string) (string, error) {
 	url := fmt.Sprintf("%s/etapi/auth/login", t.Url)
-	reqBody := fmt.Sprintf(`{"password": "%s", "tokenName": "TRNotes Companion"}`, password)
+	name, err := config.GetComputerName()
+	if err != nil {
+		return "", err
+	}
+	reqBody := fmt.Sprintf(`{"password": "%s", "tokenName": "TRNotes on %s"}`, password, name)
 	body, err := req.New("POST", url, 201).SetBody(reqBody).SetHeaders(map[string]string{
 		"Content-Type":  "application/json",
 		"Authorization": t.Token}).Send()

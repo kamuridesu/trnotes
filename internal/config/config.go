@@ -78,3 +78,7 @@ func (c *Config) Save() error {
 	}
 	return os.WriteFile(c.configFile, []byte(content), 0666)
 }
+
+func GetComputerName() (string, error) {
+	return os.Hostname()
+}

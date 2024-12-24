@@ -17,7 +17,7 @@ func ppanic(err error) {
 }
 
 func setNewConfig() (*c.Config, error) {
-	fmt.Println("Let' do an initial config")
+	fmt.Println("Let's do an initial config")
 	url := ""
 	password := ""
 	fmt.Print("Please, insert the URL for your Trilium Server: ")

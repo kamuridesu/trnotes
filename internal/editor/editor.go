@@ -2,6 +2,7 @@ package editor
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
@@ -13,7 +14,44 @@ func SaveFile(filename, content string) error {
 }
 
 func ConvertToHtml(text string) string {
-	return strings.ReplaceAll(text, "\n", "</br>")
+	var builder strings.Builder
+	previousWasASpace := false
+
+	for _, c := range text {
+		if c == ' ' {
+			if previousWasASpace {
+				builder.WriteString("&nbsp;")
+				previousWasASpace = false
+				continue
+			}
+			previousWasASpace = true
+		} else {
+			previousWasASpace = false
+		}
+
+		switch c {
+		case '<':
+			builder.WriteString("&lt;")
+		case '>':
+			builder.WriteString("&gt;")
+		case '&':
+			builder.WriteString("&amp;")
+		case '"':
+			builder.WriteString("&quot;")
+		case '\n':
+			builder.WriteString("<p>")
+		case '\t':
+			builder.WriteString("&nbsp; &nbsp; &nbsp;")
+		default:
+			if c < 128 {
+				builder.WriteRune(c)
+			} else {
+				builder.WriteString(fmt.Sprintf("&#%d;", c))
+			}
+		}
+	}
+
+	return builder.String()
 }
 
 func ReadFile(filename string) (*string, error) {
@@ -45,7 +83,7 @@ func OpenEditor() (*string, error) {
 	tempFileLocation, err := CreateTempFile()
 	defer os.Remove(tempFileLocation)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create temp file, error is '%s'", err)
 	}
 
 	command := os.Getenv("EDITOR")
@@ -60,9 +98,12 @@ func OpenEditor() (*string, error) {
 	cmd.Stderr = os.Stderr
 
 	if err = cmd.Start(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error opening %s, error is '%s'", command, err)
 	}
-	cmd.Wait()
+	err = cmd.Wait()
+	if err != nil {
+		return nil, fmt.Errorf("%s failed to execute, error is '%s'", command, err)
+	}
 
 	return ReadFile(tempFileLocation)
 }

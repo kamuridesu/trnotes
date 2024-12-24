@@ -3,12 +3,12 @@ package trilium
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/kamuridesu/trnotes/internal/config"
+	req "github.com/kamuridesu/trnotes/internal/request"
 )
 
 type Trilium struct {
@@ -49,34 +49,18 @@ func (t *Trilium) SetToken(token string) {
 	t.Token = token
 }
 
-func (t *Trilium) authorize(req *http.Request) {
-	req.Header.Add("Authorization", t.Token)
-}
-
 func (t *Trilium) Authorize(password string) (string, error) {
 	url := fmt.Sprintf("%s/etapi/auth/login", t.Url)
-	reqBody := fmt.Sprintf(`{"password": "%s"}`, password)
-	req, err := http.NewRequest("POST", url, strings.NewReader(reqBody))
+	reqBody := fmt.Sprintf(`{"password": "%s", "tokenName": "TRNotes Companion"}`, password)
+	body, err := req.New("POST", url, 201).SetBody(reqBody).SetHeaders(map[string]string{
+		"Content-Type":  "application/json",
+		"Authorization": t.Token}).Send()
 	if err != nil {
 		return "", err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", err
-	}
-
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return "", err
-	}
-
-	if res.StatusCode != 201 {
-		return "", fmt.Errorf("error creating token, status is %d and response is %s", res.StatusCode, body)
 	}
 
 	bodyContent := make(map[string]string)
-	if err = json.Unmarshal(body, &bodyContent); err != nil {
+	if err = json.Unmarshal([]byte(body), &bodyContent); err != nil {
 		return "", err
 	}
 
@@ -94,27 +78,15 @@ func (t *Trilium) Authorize(password string) (string, error) {
 func (t *Trilium) GetCurrentDayNote() (*Note, error) {
 	date := time.Now().Local().Format(time.DateOnly)
 	url := fmt.Sprintf(`%s/etapi/calendar/days/%s`, t.Url, date)
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, err
-	}
-	t.authorize(req)
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
 
-	if res.StatusCode != 200 {
-		return nil, fmt.Errorf("error getting note for date %s, status is %d", date, res.StatusCode)
-	}
-
-	body, err := io.ReadAll(res.Body)
+	body, err := req.New("GET", url, 200).SetHeaders(map[string]string{
+		"Authorization": t.Token}).Send()
 	if err != nil {
 		return nil, err
 	}
 
 	note := &Note{}
-	if err = json.Unmarshal(body, note); err != nil {
+	if err = json.Unmarshal([]byte(body), note); err != nil {
 		return nil, err
 	}
 
@@ -129,31 +101,19 @@ func (t *Trilium) SaveNote(content *string) error {
 	}
 	url := fmt.Sprintf(`%s/etapi/create-note`, t.Url)
 
-	postBody := make(map[string]string)
-	postBody["parentNoteId"] = parent.Id
-	postBody["title"] = "Note"
-	postBody["type"] = "text"
-	postBody["content"] = *content
-
-	postBodyJson, err := json.Marshal(postBody)
+	postBodyJson, err := json.Marshal(map[string]string{"parentNoteId": parent.Id,
+		"title":   "Note",
+		"type":    "text",
+		"content": *content})
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest("POST", url, strings.NewReader(string(postBodyJson)))
+	_, err = req.New("POST", url, 201).SetHeaders(map[string]string{
+		"Content-Type":  "application/json",
+		"Authorization": t.Token}).SetBody(string(postBodyJson)).Send()
 	if err != nil {
 		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	t.authorize(req)
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return err
-	}
-	body, err := io.ReadAll(res.Body)
-	if res.StatusCode != 201 {
-		return fmt.Errorf("error saving note, status is %d, status is %s", res.StatusCode, body)
 	}
 	return nil
-
 }

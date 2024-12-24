@@ -18,7 +18,7 @@ type Config struct {
 func GetConfigPath() (string, error) {
 	home, err := os.UserConfigDir()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error fetching user config dir, error is '%s'", err)
 	}
 	configPath := path.Join(home, "trnotes")
 	os.MkdirAll(configPath, os.ModePerm)
@@ -34,7 +34,7 @@ func GetExistingConfig() (*Config, error) {
 	conf, err := Parse(configFilePath)
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
-			return nil, err
+			return nil, fmt.Errorf("error reading config, error is '%s'", err)
 		}
 		return nil, nil
 	}
@@ -62,7 +62,7 @@ func Parse(filename string) (*Config, error) {
 	conf := &Config{}
 	err = yaml.Unmarshal(file, conf)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error parsing config, error is '%s'", err)
 	}
 	conf.configFile = filename
 	return conf, nil
@@ -74,7 +74,7 @@ func (c *Config) Save() error {
 	}
 	content, err := yaml.Marshal(c)
 	if err != nil {
-		return err
+		return fmt.Errorf("error saving config, error is '%s'", err)
 	}
 	return os.WriteFile(c.configFile, []byte(content), 0666)
 }

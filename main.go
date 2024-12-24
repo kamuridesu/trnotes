@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	c "github.com/kamuridesu/trnotes/internal/config"
 	e "github.com/kamuridesu/trnotes/internal/editor"
@@ -10,7 +11,8 @@ import (
 
 func ppanic(err error) {
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 }
 
@@ -57,6 +59,7 @@ func main() {
 	trilium, err := t.FromConfig(config)
 	ppanic(err)
 	tempFile, err := e.OpenEditor()
+	ppanic(err)
 	if *tempFile == "" {
 		return
 	}

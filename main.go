@@ -1,13 +1,27 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	c "github.com/kamuridesu/trnotes/internal/config"
 	e "github.com/kamuridesu/trnotes/internal/editor"
 	t "github.com/kamuridesu/trnotes/internal/trilium"
 )
+
+type Args struct {
+	Name *string
+}
+
+func argparse() *Args {
+	args := Args{}
+	flag.Parse()
+	name := strings.Join(flag.Args(), " ")
+	args.Name = &name
+	return &args
+}
 
 func ppanic(err error) {
 	if err != nil {
@@ -54,6 +68,7 @@ func setup() (*c.Config, error) {
 }
 
 func main() {
+	args := argparse()
 	config, err := setup()
 	ppanic(err)
 	trilium, err := t.FromConfig(config)
@@ -64,6 +79,6 @@ func main() {
 		return
 	}
 	ppanic(err)
-	err = trilium.SaveNote(tempFile)
+	err = trilium.SaveNote(tempFile, args.Name)
 	ppanic(err)
 }

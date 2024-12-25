@@ -70,7 +70,7 @@ func (t *Trilium) Authorize(password string) (string, error) {
 
 	token, ok := bodyContent["authToken"]
 	if !ok {
-		return "", fmt.Errorf("fail to fetch authToken from api, response is %v", bodyContent)
+		return "", fmt.Errorf("failed to fetch authToken from api, response is %v", bodyContent)
 	}
 
 	t.Token = token
@@ -98,15 +98,19 @@ func (t *Trilium) GetCurrentDayNote() (*Note, error) {
 
 }
 
-func (t *Trilium) SaveNote(content *string) error {
+func (t *Trilium) SaveNote(content, name *string) error {
 	parent, err := t.GetCurrentDayNote()
 	if err != nil {
 		return err
 	}
 	url := fmt.Sprintf(`%s/etapi/create-note`, t.Url)
+	title := "Note"
+	if name != nil && *name != "" {
+		title = *name
+	}
 
 	postBodyJson, err := json.Marshal(map[string]string{"parentNoteId": parent.Id,
-		"title":   "Note",
+		"title":   title,
 		"type":    "text",
 		"content": *content})
 	if err != nil {

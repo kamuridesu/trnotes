@@ -13,7 +13,6 @@ type Request struct {
 	Headers        map[string]string
 	Body           string
 	ExpectedStatus int
-	req            *http.Request
 }
 
 func New(method, url string, expectedStatus int) *Request {
@@ -35,28 +34,19 @@ func (r *Request) SetBody(body string) *Request {
 	return r
 }
 
-func (r *Request) prepare() error {
-	var body io.Reader
+func (r *Request) Send() (string, error) {
+	var rawBody io.Reader
 	if r.Body != "" {
-		body = strings.NewReader(r.Body)
+		rawBody = strings.NewReader(r.Body)
 	}
-	req, err := http.NewRequest(r.Method, r.Url, body)
+	req, err := http.NewRequest(r.Method, r.Url, rawBody)
 	if err != nil {
-		return err
+		return "", err
 	}
 	for key, value := range r.Headers {
 		req.Header.Add(key, value)
 	}
-	r.req = req
-	return nil
-}
-
-func (r *Request) Send() (string, error) {
-	err := r.prepare()
-	if err != nil {
-		return "", err
-	}
-	res, err := http.DefaultClient.Do(r.req)
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", err
 	}

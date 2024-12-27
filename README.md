@@ -13,3 +13,5 @@ If no $EDITOR variable is set, it'll default to nano(1) on Linux and notepad.exe
 
 ## Notes
 The notes are saved to your Journal using the date as base to get today's note. The notes are saved with the title "Note" if no argument is passed, otherwise the argument will be the name of the note.
+
+You can use `-edit` to edit an existing note. It should be used with a name. If there's more than one note with the same name, you will be prompted to choose which note to edit.

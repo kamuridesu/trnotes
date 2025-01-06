@@ -17,6 +17,7 @@ type Args struct {
 	Debug      *bool
 	Edit       *bool
 	DatePrefix *string
+	List       *bool
 }
 
 func Check[T any](x T, err error) T {
@@ -31,6 +32,7 @@ func Argparse() *Args {
 	args := Args{}
 	args.Debug = flag.Bool("debug", false, "Use Debug function")
 	args.Edit = flag.Bool("edit", false, "Edit existing note")
+	args.List = flag.Bool("list", false, "List current date notes")
 	flag.Parse()
 	name := strings.Join(flag.Args(), " ")
 	if *args.Edit && name == "" {
@@ -118,9 +120,9 @@ func PromptMultiNotes(notes *[]*t.Note) *t.Note {
 
 func CheckIfNoteDatePrefix(noteTitle string) *string {
 	r := ""
-	result := Check(regexp.Compile(`\d+-\d+-\d+\/`)).Find([]byte(noteTitle))
+	result := Check(regexp.Compile(`\d+-\d+-\d+`)).Find([]byte(noteTitle))
 	if result != nil {
-		r = strings.Split(string(result), "/")[0]
+		r = string(result)
 	}
 	return &r
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/kamuridesu/trnotes/cmd"
 	e "github.com/kamuridesu/trnotes/internal/editor"
@@ -17,8 +18,21 @@ func main() {
 	}
 	config := cmd.Check(cmd.Setup())
 	trilium := cmd.Check(t.FromConfig(config))
+	var notes *[]*t.Note
+	if *args.List {
+		if *args.DatePrefix != "" {
+			tm := cmd.Check(time.Parse("2006-01-02", *args.DatePrefix))
+			notes = cmd.Check(trilium.GetAllDateNotes(tm))
+		} else {
+			notes = cmd.Check(trilium.GetAllDateNotes(time.Now().Local()))
+		}
+		for i, note := range *notes {
+			fmt.Printf("%d. %s\n", i+1, note.Title)
+		}
+		return
+	}
+
 	if *args.Edit {
-		var notes *[]*t.Note
 		if *args.DatePrefix != "" {
 			notes = cmd.Check(trilium.SearchInDate(*args.DatePrefix, *args.Name))
 		} else {

@@ -80,9 +80,9 @@ func (t *Trilium) Authorize(password string) (string, error) {
 
 }
 
-func (t *Trilium) GetCurrentDayNote() (*Note, error) {
-	date := time.Now().Local().Format(time.DateOnly)
-	url := fmt.Sprintf(`%s/etapi/calendar/days/%s`, t.Url, date)
+func (t *Trilium) GetSelectedDayNote(date time.Time) (*Note, error) {
+	dateStr := date.Format(time.DateOnly)
+	url := fmt.Sprintf(`%s/etapi/calendar/days/%s`, t.Url, dateStr)
 
 	body, err := req.New("GET", url, 200).SetHeaders(map[string]string{
 		"Authorization": t.Token}).Send()
@@ -96,7 +96,10 @@ func (t *Trilium) GetCurrentDayNote() (*Note, error) {
 	}
 
 	return note, nil
+}
 
+func (t *Trilium) GetCurrentDayNote() (*Note, error) {
+	return t.GetSelectedDayNote(time.Now().Local())
 }
 
 func (t *Trilium) SaveNote(content, name *string) error {
@@ -176,8 +179,8 @@ func (t *Trilium) UpdateNote(id, body string) error {
 	return err
 }
 
-func (t *Trilium) GetAllTodayNotes() (*[]*Note, error) {
-	note, err := t.GetCurrentDayNote()
+func (t *Trilium) GetAllDateNotes(date time.Time) (*[]*Note, error) {
+	note, err := t.GetSelectedDayNote(date)
 	if err != nil {
 		return nil, err
 	}
@@ -188,11 +191,7 @@ func (t *Trilium) GetAllTodayNotes() (*[]*Note, error) {
 	return notes, nil
 }
 
-func (t *Trilium) SearchInTodayNotes(title string) (*[]*Note, error) {
-	notes, err := t.GetAllTodayNotes()
-	if err != nil {
-		return nil, err
-	}
+func (t *Trilium) findNote(title string, notes *[]*Note) (*[]*Note, error) {
 	matches := make([]*Note, 0)
 	for _, note := range *notes {
 		if note.Title == title {
@@ -203,4 +202,24 @@ func (t *Trilium) SearchInTodayNotes(title string) (*[]*Note, error) {
 		return nil, fmt.Errorf("note '%s' not found", title)
 	}
 	return &matches, nil
+}
+
+func (t *Trilium) SearchInTodayNotes(title string) (*[]*Note, error) {
+	notes, err := t.GetAllDateNotes(time.Now().Local())
+	if err != nil {
+		return nil, err
+	}
+	return t.findNote(title, notes)
+}
+
+func (t *Trilium) SearchInDate(date string, title string) (*[]*Note, error) {
+	d, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		return nil, err
+	}
+	notes, err := t.GetAllDateNotes(d)
+	if err != nil {
+		return nil, err
+	}
+	return t.findNote(title, notes)
 }

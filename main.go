@@ -44,6 +44,9 @@ func main() {
 		}
 		content := cmd.Check(trilium.FetchNoteContent(note.Id))
 		tempFile := cmd.Check(e.EditFile(*content))
+		if *tempFile == *content {
+			return
+		}
 		cmd.Check[any](nil, trilium.UpdateNote(note.Id, *tempFile))
 		return
 	}

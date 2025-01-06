@@ -22,3 +22,4 @@ jobs:
           goarch: amd64
           binary_name: "trnotes"
           extra_files: README.md
+          ldflags: -s -w -extldflags "-static"

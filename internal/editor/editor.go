@@ -70,6 +70,9 @@ func CreateTempFile(content string) (string, error) {
 		return "", err
 	}
 	tempFileLocation := file.Name()
+	if runtime.GOOS == "windows" {
+		tempFileLocation += ".txt"
+	}
 	if _, err := os.Stat(tempFileLocation); err == nil {
 		if err := SaveFile(tempFileLocation, content); err != nil {
 			return "", err

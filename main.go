@@ -16,7 +16,7 @@ func main() {
 		cmd.Debug()
 		return
 	}
-	config := cmd.Check(cmd.Setup())
+	config := cmd.Check(cmd.Setup(args))
 	trilium := cmd.Check(t.FromConfig(config))
 	var notes *[]*t.Note
 	if *args.List {

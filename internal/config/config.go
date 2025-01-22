@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 
 	"gopkg.in/yaml.v3"
 )
@@ -15,19 +16,31 @@ type Config struct {
 	configFile string
 }
 
-func GetConfigPath() (string, error) {
-	home, err := os.UserConfigDir()
-	if err != nil {
-		return "", fmt.Errorf("error fetching user config dir, error is '%s'", err)
+func GetConfigPath(defaultConfigFile string) (string, error) {
+	if defaultConfigFile == "" {
+		home, err := os.UserConfigDir()
+		if err != nil {
+			return "", fmt.Errorf("error fetching user config dir, error is '%s'", err)
+		}
+		configPath := path.Join(home, "trnotes")
+		os.MkdirAll(configPath, os.ModePerm)
+		configFilePath := path.Join(configPath, "config.yaml")
+		return configFilePath, nil
 	}
-	configPath := path.Join(home, "trnotes")
-	os.MkdirAll(configPath, os.ModePerm)
-	configFilePath := path.Join(configPath, "config.yaml")
-	return configFilePath, nil
+	stat, err := os.Stat(defaultConfigFile)
+	if err != nil {
+		return "", err
+	}
+	if stat.IsDir() {
+		return "", fmt.Errorf("config should be a file, got dir")
+	}
+	parent := filepath.Dir(defaultConfigFile)
+	os.MkdirAll(parent, os.ModePerm)
+	return defaultConfigFile, nil
 }
 
-func GetExistingConfig() (*Config, error) {
-	configFilePath, err := GetConfigPath()
+func GetExistingConfig(defaultConfigFile string) (*Config, error) {
+	configFilePath, err := GetConfigPath(defaultConfigFile)
 	if err != nil {
 		return nil, err
 	}
@@ -43,9 +56,9 @@ func GetExistingConfig() (*Config, error) {
 
 }
 
-func New(url, token string) (*Config, error) {
+func New(url, token, defaultConfigFile string) (*Config, error) {
 	c := Config{Url: url, Token: token}
-	configFile, err := GetConfigPath()
+	configFile, err := GetConfigPath(defaultConfigFile)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +83,7 @@ func Parse(filename string) (*Config, error) {
 
 func (c *Config) Save() error {
 	if c.configFile == "" {
-		return fmt.Errorf("missing config path!")
+		return fmt.Errorf("missing config path")
 	}
 	content, err := yaml.Marshal(c)
 	if err != nil {

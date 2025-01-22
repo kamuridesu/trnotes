@@ -6,52 +6,10 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"strings"
 )
 
 func SaveFile(filename, content string) error {
 	return os.WriteFile(filename, []byte(content), os.ModeAppend)
-}
-
-func ConvertToHtml(text string) string {
-	var builder strings.Builder
-	previousWasASpace := false
-
-	for _, c := range text {
-		if c == ' ' {
-			if previousWasASpace {
-				builder.WriteString("&nbsp;")
-				previousWasASpace = false
-				continue
-			}
-			previousWasASpace = true
-		} else {
-			previousWasASpace = false
-		}
-
-		switch c {
-		case '<':
-			builder.WriteString("&lt;")
-		case '>':
-			builder.WriteString("&gt;")
-		case '&':
-			builder.WriteString("&amp;")
-		case '"':
-			builder.WriteString("&quot;")
-		case '\n':
-			builder.WriteString("<p>")
-		case '\t':
-			builder.WriteString("&nbsp; &nbsp; &nbsp;")
-		default:
-			if c < 128 {
-				builder.WriteRune(c)
-			} else {
-				builder.WriteString(fmt.Sprintf("&#%d;", c))
-			}
-		}
-	}
-
-	return builder.String()
 }
 
 func ReadFile(filename string) (*string, error) {
@@ -59,7 +17,6 @@ func ReadFile(filename string) (*string, error) {
 	if err != nil {
 		return nil, err
 	}
-	// str := ConvertToHtml(string(data))
 	str := string(data)
 	return &str, nil
 }

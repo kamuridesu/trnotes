@@ -18,6 +18,7 @@ type Args struct {
 	Edit       *bool
 	DatePrefix *string
 	List       *bool
+	ConfigFile *string
 }
 
 func Check[T any](x T, err error) T {
@@ -33,6 +34,7 @@ func Argparse() *Args {
 	args.Debug = flag.Bool("debug", false, "Use Debug function")
 	args.Edit = flag.Bool("edit", false, "Edit existing note")
 	args.List = flag.Bool("list", false, "List current date notes")
+	args.ConfigFile = flag.String("config", "", "Sets the config file to be used")
 	flag.Parse()
 	name := strings.Join(flag.Args(), " ")
 	if *args.Edit && name == "" {
@@ -44,10 +46,16 @@ func Argparse() *Args {
 		name = strings.Join(strings.Split(name, "/")[1:], "/")
 		args.Name = &name
 	}
+
+	if *args.ConfigFile == "" {
+		config := os.Getenv("TRNOTES_CONFIG")
+		args.ConfigFile = &config
+	}
+
 	return &args
 }
 
-func SetNewConfig() (*c.Config, error) {
+func SetNewConfig(args *Args) (*c.Config, error) {
 	fmt.Println("Let's do an initial config")
 	url := ""
 	password := ""
@@ -63,16 +71,16 @@ func SetNewConfig() (*c.Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	return c.New(url, token)
+	return c.New(url, token, *args.ConfigFile)
 }
 
-func Setup() (*c.Config, error) {
-	conf, err := c.GetExistingConfig()
+func Setup(args *Args) (*c.Config, error) {
+	conf, err := c.GetExistingConfig(*args.ConfigFile)
 	if err != nil {
 		return nil, err
 	}
 	if conf == nil {
-		conf, err = SetNewConfig()
+		conf, err = SetNewConfig(args)
 		if err != nil {
 			return nil, err
 		}
@@ -85,7 +93,10 @@ func Setup() (*c.Config, error) {
 }
 
 func Debug() {
-	config := Check(Setup())
+	args := &Args{}
+	empty := ""
+	args.ConfigFile = &empty
+	config := Check(Setup(args))
 	trilium := Check(t.FromConfig(config))
 	note := Check(trilium.GetCurrentDayNote())
 	fmt.Println(note.Title)

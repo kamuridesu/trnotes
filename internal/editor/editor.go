@@ -8,17 +8,27 @@ import (
 	"runtime"
 )
 
+func GetTextEditor() string {
+	command := os.Getenv("EDITOR")
+	if command == "" {
+		command = "nano"
+		if runtime.GOOS == "windows" {
+			command = "notepad"
+		}
+	}
+	return command
+}
+
 func SaveFile(filename, content string) error {
 	return os.WriteFile(filename, []byte(content), os.ModeAppend)
 }
 
-func ReadFile(filename string) (*string, error) {
+func ReadFile(filename string) (string, error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	str := string(data)
-	return &str, nil
+	return string(data), nil
 }
 
 func CreateTempFile(content string) (string, error) {
@@ -40,43 +50,38 @@ func CreateTempFile(content string) (string, error) {
 	return tempFileLocation, err
 }
 
-func EditFile(content string) (*string, error) {
+func EditFile(content string) (string, error) {
 	tempFileLocation, err := CreateTempFile(content)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create temp file, error is '%s'", err)
+		return "", fmt.Errorf("failed to create temp file, error is '%s'", err)
 	}
 	defer os.Remove(tempFileLocation)
 	return OpenEditor(tempFileLocation)
 }
 
-func NewFile() (*string, error) {
+func NewFile() (string, error) {
 	tempFileLocation, err := CreateTempFile("")
 	if err != nil {
-		return nil, fmt.Errorf("failed to create temp file, error is '%s'", err)
+		return "", fmt.Errorf("failed to create temp file, error is '%s'", err)
 	}
 	defer os.Remove(tempFileLocation)
 	return OpenEditor(tempFileLocation)
 }
 
-func OpenEditor(tempFileLocation string) (*string, error) {
+func OpenEditor(tempFileLocation string) (string, error) {
+	command := GetTextEditor()
 
-	command := os.Getenv("EDITOR")
-	if command == "" && runtime.GOOS == "windows" {
-		command = "notepad"
-	} else if command == "" {
-		command = "nano"
-	}
 	cmd := exec.Command(command, tempFileLocation)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
 	if err := cmd.Start(); err != nil {
-		return nil, fmt.Errorf("error opening %s, error is '%s'", command, err)
+		return "", fmt.Errorf("error opening %s, error is '%s'", command, err)
 	}
 	err := cmd.Wait()
 	if err != nil {
-		return nil, fmt.Errorf("%s failed to execute, error is '%s'", command, err)
+		return "", fmt.Errorf("%s failed to execute, error is '%s'", command, err)
 	}
 
 	return ReadFile(tempFileLocation)

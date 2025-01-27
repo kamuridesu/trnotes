@@ -102,11 +102,11 @@ func Debug() {
 	fmt.Println(note.Title)
 	if len(note.ChildNoteIds) > 0 {
 		notes := Check(trilium.FetchChildrenNotes(note.ChildNoteIds))
-		for _, note := range *notes {
+		for _, note := range notes {
 			fmt.Println(note.Title)
 			if note.Title == "Note" {
 				body := Check(trilium.FetchNoteContent(note.Id))
-				fmt.Println(*body)
+				fmt.Println(body)
 				fmt.Println(note.Mime)
 				fmt.Println(note.Type)
 			}
@@ -114,19 +114,19 @@ func Debug() {
 	}
 }
 
-func PromptMultiNotes(notes *[]*t.Note) *t.Note {
+func PromptMultiNotes(notes []*t.Note) *t.Note {
 	fmt.Println("More than one note found!")
-	for i, note := range *notes {
+	for i, note := range notes {
 		fmt.Printf("%d. %s\n", i+1, note.Title)
 	}
 	choosenStr := ""
 	fmt.Print("Please, select one for the list: ")
 	fmt.Scanln(&choosenStr)
 	choosen := Check(strconv.Atoi(choosenStr))
-	if choosen < 0 || choosen > len(*notes) {
+	if choosen < 0 || choosen > len(notes) {
 		Check[any](nil, fmt.Errorf("error: selected number is not in the list"))
 	}
-	return (*notes)[choosen-1]
+	return (notes)[choosen-1]
 }
 
 func CheckIfNoteDatePrefix(noteTitle string) *string {

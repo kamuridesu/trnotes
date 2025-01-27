@@ -53,7 +53,6 @@ func GetExistingConfig(defaultConfigFile string) (*Config, error) {
 	}
 	conf.configFile = configFilePath
 	return conf, err
-
 }
 
 func New(url, token, defaultConfigFile string) (*Config, error) {
@@ -64,7 +63,6 @@ func New(url, token, defaultConfigFile string) (*Config, error) {
 	}
 	c.configFile = configFile
 	return &c, err
-
 }
 
 func Parse(filename string) (*Config, error) {

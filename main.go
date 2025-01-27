@@ -18,7 +18,7 @@ func main() {
 	}
 	config := cmd.Check(cmd.Setup(args))
 	trilium := cmd.Check(t.FromConfig(config))
-	var notes *[]*t.Note
+	var notes []*t.Note
 	if *args.List {
 		if *args.DatePrefix != "" {
 			tm := cmd.Check(time.Parse("2006-01-02", *args.DatePrefix))
@@ -26,7 +26,7 @@ func main() {
 		} else {
 			notes = cmd.Check(trilium.GetAllDateNotes(time.Now().Local()))
 		}
-		for i, note := range *notes {
+		for i, note := range notes {
 			fmt.Printf("%d. %s\n", i+1, note.Title)
 		}
 		return
@@ -38,21 +38,21 @@ func main() {
 		} else {
 			notes = cmd.Check(trilium.SearchInTodayNotes(*args.Name))
 		}
-		note := (*notes)[0]
-		if len(*notes) > 1 {
+		note := (notes)[0]
+		if len(notes) > 1 {
 			note = cmd.PromptMultiNotes(notes)
 		}
 		content := cmd.Check(trilium.FetchNoteContent(note.Id))
-		tempFile := cmd.Check(e.EditFile(*content))
-		if *tempFile == *content {
+		tempFile := cmd.Check(e.EditFile(content))
+		if tempFile == content {
 			return
 		}
-		cmd.Check[any](nil, trilium.UpdateNote(note.Id, *tempFile))
+		cmd.Check[any](nil, trilium.UpdateNote(note.Id, tempFile))
 		return
 	}
 	tempFile := cmd.Check(e.NewFile())
-	if *tempFile == "" {
+	if tempFile == "" {
 		return
 	}
-	cmd.Check[any](nil, trilium.SaveNote(tempFile, args.Name))
+	cmd.Check[any](nil, trilium.SaveNote(tempFile, *args.Name))
 }

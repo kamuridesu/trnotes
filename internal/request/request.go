@@ -29,6 +29,11 @@ func (r *Request) SetHeaders(headers map[string]string) *Request {
 	return r
 }
 
+func (r *Request) SetHeader(name, value string) *Request {
+	r.Headers[name] = value
+	return r
+}
+
 func (r *Request) SetBody(body string) *Request {
 	r.Body = body
 	return r
